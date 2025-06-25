@@ -1,45 +1,57 @@
-// 生成した Prisma Client をインポートするのじゃ
-// このパスは schema.prisma の generator で指定した output と一致しておるな
-import { PrismaClient } from "./generated/prisma/client";
+// Expressフレームワークをインポートするのじゃ
+import express from 'express';
+// 生成した Prisma Client をインポートするぞ
+import { PrismaClient } from './generated/prisma/client';
 
-// Prisma Client を初期化するぞ
+// Prisma Client を初期化するのじゃ
 const prisma = new PrismaClient({
-  // クエリが実行されたときに、実際にどのようなSQLが実行されたかをログに表示する設定じゃ
+  // データベースに対して実行されるクエリをログに表示する設定じゃな
   log: ['query'],
 });
 
-// メインの処理を非同期関数として定義するのじゃ
-async function main() {
-  // Prisma Client を使ってデータベースに接続したことをログに出力するぞ
-  console.log("Prisma Client を初期化しました。");
+// Expressアプリケーションを初期化するぞ
+const app = express();
 
-  // 現在データベースに保存されている全てのユーザーを取得するのじゃ
-  const usersBefore = await prisma.user.findMany();
-  console.log("Before ユーザー一覧:", usersBefore);
+// 環境変数からポート番号を取得するのじゃ。もし設定されていなければ 8888 を使用するぞい
+const PORT = process.env.PORT || 8888;
 
-  // 新しいユーザーをデータベースに追加するのじゃ
-  // 名前は実行するたびに異なるように、現在時刻を組み合わせておるぞ
-  const newUser = await prisma.user.create({
-    data: {
-      name: `新しいユーザー ${new Date().toISOString()}`,
-    },
-  });
-  console.log("新しいユーザーを追加しました:", newUser);
+// EJS をテンプレートエンジンとして設定するのじゃ
+// これにより、ウェブページをEJSテンプレートファイルを使って動的に生成できるようになるぞ
+app.set('view engine', 'ejs');
+// テンプレートファイルが 'views' ディレクトリにあることをExpressに伝えるのじゃ
+app.set('views', './views');
 
-  // もう一度、現在のユーザー一覧をデータベースから取得するのじゃ
-  const usersAfter = await prisma.user.findMany();
-  console.log("After ユーザー一覧:", usersAfter);
-}
+// HTTPリクエストのボディ（特にフォームからのデータ）を解析するための設定じゃな
+// これで、フォームから送られてくる 'name' などのデータを取得できるようになるぞ
+app.use(express.urlencoded({ extended: true }));
 
-// main 関数を実行するのじゃ
-// エラーが発生した場合は、エラーメッセージを表示してプログラムを終了するぞ
-// 最後にPrisma Clientの接続を切断するのを忘れないようにな
-main()
-  .catch(e => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-    console.log("Prisma Client を切断しました。");
-  });
+// ルートパス ('/') へのGETリクエストを処理するハンドラーじゃ
+app.get('/', async (req, res) => {
+  // データベースからすべてのユーザー情報を取得するのじゃ
+  const users = await prisma.user.findMany();
+  // 'index' という名前のEJSテンプレートをレンダリングし、取得したユーザー情報を渡すのじゃ
+  // これで、ウェブページにユーザー一覧が表示されるぞ
+  res.render('index', { users });
+});
+
+// '/users' パスへのPOSTリクエストを処理するハンドラーじゃ
+// これは、フォームから新しいユーザー情報が送信されたときに動くのじゃ
+app.post('/users', async (req, res) => {
+  // フォームから送信された 'name' の値を取得するのじゃ
+  const name = req.body.name;
+  if (name) {
+    // 名前が入力されていれば、新しいユーザーをデータベースに追加するぞ
+    const newUser = await prisma.user.create({
+      data: { name },
+    });
+    console.log('新しいユーザーを追加しました:', newUser);
+  }
+  // ユーザーを追加した後、ルートパス ('/') にリダイレクトするのじゃ
+  // これにより、更新されたユーザー一覧が再度表示されるぞ
+  res.redirect('/');
+});
+
+// サーバーを指定されたポートで起動するのじゃ
+app.listen(PORT, () => {
+  console.log(`Expressサーバーが起動したぞい！ http://localhost:${PORT} でアクセスできるぞ。`);
+});
