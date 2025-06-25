@@ -17,4 +17,5 @@ datasource db {
 model User {
   id    Int     @id @default(autoincrement()) // ユーザーのIDじゃな。自動で増えるように設定しておるぞ
   name  String // ユーザーの名前じゃな
+  age   Int?
 }

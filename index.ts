@@ -37,18 +37,20 @@ app.get('/', async (req, res) => {
 // '/users' パスへのPOSTリクエストを処理するハンドラーじゃ
 // これは、フォームから新しいユーザー情報が送信されたときに動くのじゃ
 app.post('/users', async (req, res) => {
-  // フォームから送信された 'name' の値を取得するのじゃ
-  const name = req.body.name;
+  const name = req.body.name; // フォームから送信された名前を取得じゃ
+  const age = Number(req.body.age); // フォームから送信された年齢を取得じゃ。数値に変換するぞ。
+  if (isNaN(age)) { // もし年齢が数値でなかったらエラーじゃ
+    console.error('年齢は数値でなければなりません。');
+    res.status(400).send('年齢は数値でなければなりません。');
+    return; // ここで処理を終了じゃ
+  }
   if (name) {
-    // 名前が入力されていれば、新しいユーザーをデータベースに追加するぞ
     const newUser = await prisma.user.create({
-      data: { name },
+      data: { name, age }, // 年齢も保存するのじゃ
     });
     console.log('新しいユーザーを追加しました:', newUser);
   }
-  // ユーザーを追加した後、ルートパス ('/') にリダイレクトするのじゃ
-  // これにより、更新されたユーザー一覧が再度表示されるぞ
-  res.redirect('/');
+  res.redirect('/'); // ユーザー追加後、一覧ページにリダイレクトじゃ
 });
 
 // サーバーを指定されたポートで起動するのじゃ
